@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Emotion Voice Studio</title>
+<style>
+:root{--bg:#0f1115;--panel:#181b22;--panel2:#20242d;--text:#e8eaf0;--mute:#8b92a3;--accent:#7c9cff;--accent2:#ff8fb1;--line:#2b303b;--tagbg:rgba(124,156,255,.22);--tagfg:#a9bcff;--radius:14px;--font:system-ui,Segoe UI,sans-serif;--bgimg:none}
+[data-theme=light]{--bg:#f4f5f8;--panel:#fff;--panel2:#eceef4;--text:#1b1e27;--mute:#6b7280;--accent:#4f6bff;--accent2:#e0457b;--line:#dcdfe8;--tagbg:rgba(79,107,255,.15);--tagfg:#3649c9}
+[data-theme=playful]{--bg:#fff4e0;--panel:#fff;--panel2:#ffe6c7;--text:#3a2a1a;--mute:#8a6d4b;--accent:#ff6b6b;--accent2:#4ecdc4;--line:#ffd49a;--tagbg:rgba(255,107,107,.18);--tagfg:#c43c3c;--radius:22px;--font:"Trebuchet MS",system-ui,sans-serif}
+[data-theme=daw]{--bg:#0a0c0a;--panel:#131713;--panel2:#1b211b;--text:#c9f7c9;--mute:#6f8a6f;--accent:#39ff88;--accent2:#ffb300;--line:#263026;--tagbg:rgba(57,255,136,.16);--tagfg:#7dffb0;--radius:4px;--font:Consolas,"Cascadia Mono",monospace}
+[data-theme=glass]{--bg:#1a1f3a;--panel:rgba(255,255,255,.10);--panel2:rgba(255,255,255,.12);--text:#fff;--mute:rgba(255,255,255,.65);--accent:#9fd2ff;--accent2:#ffb3e6;--line:rgba(255,255,255,.28);--tagbg:rgba(255,255,255,.22);--tagfg:#fff;--radius:26px;
+ --bgimg:radial-gradient(circle at 15% 20%,#7b5cff 0,transparent 40%),radial-gradient(circle at 85% 15%,#ff6ec4 0,transparent 38%),radial-gradient(circle at 70% 90%,#33d1ff 0,transparent 42%),radial-gradient(circle at 10% 85%,#4cffb0 0,transparent 35%)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);background-image:var(--bgimg);background-attachment:fixed;color:var(--text);font:15px/1.5 var(--font);padding:24px 16px}
+main{max-width:860px;margin:auto;display:grid;gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+[data-theme=glass] .card{backdrop-filter:blur(22px) saturate(1.6);-webkit-backdrop-filter:blur(22px) saturate(1.6);box-shadow:0 8px 32px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.4)}
+[data-theme=glass] button,[data-theme=glass] select{backdrop-filter:blur(10px)}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font-size:20px;margin:0}
+select,button{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:calc(var(--radius)/1.5);padding:8px 12px}
+button{cursor:pointer}button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#fff;border-color:transparent;font-weight:600;padding:12px 28px}
+[data-theme=daw] button.primary,[data-theme=glass] button.primary{color:#000}
+button:disabled{opacity:.5;cursor:wait}
+.editor{position:relative;height:220px}
+.editor>*{position:absolute;inset:0;margin:0;padding:14px;font:15px/1.6 var(--font);border-radius:calc(var(--radius)/1.5);white-space:pre-wrap;word-wrap:break-word;overflow:auto;font-kerning:none;font-variant-ligatures:none}
+#hl{background:var(--panel2);border:1px solid var(--line);color:transparent;pointer-events:none}
+#hl mark{background:var(--tagbg);color:transparent;border-radius:4px;box-shadow:0 0 0 1px var(--tagfg)}
+#text{background:transparent;color:var(--text);border:1px solid transparent;resize:none;outline:none;caret-color:var(--accent)}
+#hl,#text{ scrollbar-width:none}
+#menu{position:fixed;z-index:9;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px;max-height:220px;overflow:auto;display:none;min-width:170px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+[data-theme=glass] #menu{background:rgba(40,40,70,.7);backdrop-filter:blur(20px)}
+#menu div{padding:5px 10px;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;gap:16px}
+#menu div.on{background:var(--accent);color:#fff}#menu small{opacity:.65}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 22px;margin-top:14px}
+label{display:grid;gap:4px;color:var(--mute);font-size:13px}label b{color:var(--text);font-weight:500}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.hint{color:var(--mute);font-size:13px;margin:10px 0 0}
+.bar{height:6px;background:var(--panel2);border-radius:9px;overflow:hidden;margin-top:12px;display:none}.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+#status{color:var(--mute);margin-top:8px;min-height:1.5em}#err{color:#ff6b6b}#warn{color:var(--accent2);font-size:13px}
+canvas{width:100%;height:110px;display:block;background:var(--panel2);border-radius:calc(var(--radius)/1.5);cursor:pointer}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center}
+a.btn{color:var(--text);text-decoration:none;background:var(--panel2);border:1px solid var(--line);border-radius:calc(var(--radius)/1.5);padding:8px 14px}
+#result{display:none}
+</style>
+</head>
+<body>
+<main>
+<header>
+ <h1>Emotion Voice Studio</h1>
+ <label style="grid-auto-flow:column;align-items:center;gap:8px">Theme
+  <select id="theme"><option value="auto">System</option><option value="dark">Dark</option><option value="light">Light</option><option value="playful">Playful</option><option value="daw">Pro audio</option><option value="glass">Liquid glass</option></select></label>
+</header>
+
+<section class="card">
+ <div class="editor"><div id="hl"></div><textarea id="text" spellcheck="false" placeholder="Type your text. Press [ for emotion tags, e.g.&#10;[excited] We actually did it! [laugh] [whisper] Don't tell anyone."></textarea></div>
+ <div id="menu"></div>
+ <p class="hint">Type <b>[</b> for tags: moods change how the following text is spoken, sounds like [laugh] are performed, and voice names like [adam] switch speaker.</p>
+ <div class="row">
+  <label>Default voice <span style="display:flex;gap:8px"><select id="voice" style="flex:1"></select><button id="prev" title="Preview voice">▶</button></span></label>
+  <label><span>Speed <b id="vs">1.00×</b></span><input id="speed" type="range" min=".6" max="1.5" step=".05" value="1"></label>
+  <label><span>Pause between sentences <b id="vp">0.35 s</b></span><input id="pause" type="range" min="0" max="2" step=".05" value=".35"></label>
+  <label><span>Emotion intensity <b id="vi">50%</b></span><input id="int" type="range" min="0" max="1" step=".05" value=".5"></label>
+ </div>
+ <div class="actions"><button id="go" class="primary">Generate</button></div>
+ <div class="bar" id="bar"><i></i></div>
+ <div id="status"></div><div id="warn"></div><div id="err"></div>
+</section>
+
+<section class="card" id="result">
+ <canvas id="wave" height="220"></canvas>
+ <div class="actions">
+  <button id="play">▶ Play</button><span id="time" style="color:var(--mute)"></span>
+  <span style="flex:1"></span>
+  <a class="btn" id="dlw" download>Download WAV</a><a class="btn" id="dlm" download>Download MP3</a>
+ </div>
+ <audio id="aud"></audio>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const safe=(f,d)=>{try{return f()}catch{return d}};
+// theme
+const mq=matchMedia('(prefers-color-scheme: dark)');
+function applyTheme(){let t=$('theme').value;if(t==='auto')t=mq.matches?'dark':'light';document.documentElement.dataset.theme=t;drawWave()}
+$('theme').value=safe(()=>localStorage.theme,null)||'glass';
+$('theme').onchange=()=>{safe(()=>localStorage.theme=$('theme').value);applyTheme()};mq.onchange=applyTheme;
+
+// tags + autocomplete
+let T={moods:[],nonverbal:[],voices:[],aliases:[]};
+const items=()=>[...T.moods.map(n=>[n,'mood']),...T.nonverbal.map(n=>[n,'sound']),...[...T.voices,...T.aliases].map(n=>[n,'voice'])];
+fetch('/api/tags').then(r=>r.json()).then(t=>{T=t;$('voice').innerHTML=t.voices.map(v=>`<option>${v}</option>`).join('');$('voice').value=safe(()=>localStorage.voice,'heart')||'heart';render()});
+const ta=$('text'),hl=$('hl'),menu=$('menu');let sel=0,list=[];
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function render(){const names=new Set(items().map(i=>i[0]));
+ hl.innerHTML=esc(ta.value).replace(/\[([^\]\n]+)\]/g,(m,n)=>names.has(n.trim().toLowerCase())?`<mark>${m}</mark>`:m)+'\n';hl.scrollTop=ta.scrollTop;
+ safe(()=>localStorage.text=ta.value)}
+function showMenu(){const p=ta.selectionStart,m=/\[([^\]\[\n]*)$/.exec(ta.value.slice(0,p));
+ if(!m){menu.style.display='none';return}
+ const q=m[1].toLowerCase();list=items().filter(i=>i[0].startsWith(q)||i[0].includes(q)).slice(0,30);
+ if(!list.length){menu.style.display='none';return}
+ sel=Math.min(sel,list.length-1);
+ menu.innerHTML=list.map((i,k)=>`<div class="${k===sel?'on':''}" data-k="${k}">${i[0]}<small>${i[1]}</small></div>`).join('');
+ const r=ta.getBoundingClientRect(),lines=ta.value.slice(0,p).split('\n').length;
+ menu.style.left=r.left+20+'px';menu.style.top=Math.min(r.bottom-10,r.top+14+Math.min(lines,8)*24)+'px';menu.style.display='block'}
+function pick(k){const p=ta.selectionStart,s=ta.value.slice(0,p).lastIndexOf('['),after=ta.value.slice(p).replace(/^[^\]\[\n]*\]?/,'');
+ const ins='['+list[k][0]+'] ';ta.value=ta.value.slice(0,s)+ins+after;ta.selectionStart=ta.selectionEnd=s+ins.length;menu.style.display='none';render();ta.focus()}
+ta.oninput=()=>{sel=0;render();showMenu()};ta.onscroll=()=>hl.scrollTop=ta.scrollTop;ta.onclick=showMenu;ta.onblur=()=>setTimeout(()=>menu.style.display='none',150);
+ta.onkeydown=e=>{if(menu.style.display!=='block')return;
+ if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();sel=(sel+(e.key==='ArrowDown'?1:-1)+list.length)%list.length;showMenu()}
+ else if(e.key==='Enter'||e.key==='Tab'){e.preventDefault();pick(sel)}else if(e.key==='Escape')menu.style.display='none'};
+menu.onmousedown=e=>{const d=e.target.closest('[data-k]');if(d){e.preventDefault();pick(+d.dataset.k)}};
+ta.value=safe(()=>localStorage.text,'')||'[calm] Good evening. [excited] And now, the moment you have all been waiting for! [laugh] [whisper] Just kidding.';
+
+// sliders
+const fmt={speed:v=>(+v).toFixed(2)+'×',pause:v=>(+v).toFixed(2)+' s',int:v=>Math.round(v*100)+'%'},lab={speed:'vs',pause:'vp',int:'vi'};
+for(const k in fmt){const el=$(k);el.oninput=()=>{$(lab[k]).textContent=fmt[k](el.value)};}
+$('voice').onchange=()=>safe(()=>localStorage.voice=$('voice').value);
+$('prev').onclick=()=>{const a=new Audio(`/voices/${$('voice').value}.wav`);a.play().catch(()=>$('status').textContent='Voice preview not ready yet, try again in a moment.')};
+
+// generate
+$('go').onclick=async()=>{
+ $('err').textContent=$('warn').textContent='';$('go').disabled=true;$('bar').style.display='block';
+ try{
+  const r=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:ta.value,voice:$('voice').value,speed:+$('speed').value,pause:+$('pause').value,intensity:+$('int').value})});
+  if(!r.ok)throw new Error((await r.json()).detail||r.statusText);
+  const {id}=await r.json();
+  for(;;){await new Promise(s=>setTimeout(s,700));const j=await (await fetch('/api/job/'+id)).json();
+   $('status').textContent=j.status;$('bar').firstChild.style.width=(j.progress*100)+'%';
+   if(j.warnings&&j.warnings.length)$('warn').textContent=j.warnings.join(' · ');
+   if(j.done){if(j.error)throw new Error(j.error);showResult(j);break}}
+ }catch(e){$('err').textContent=e.message;$('status').textContent=''}
+ $('go').disabled=false;setTimeout(()=>$('bar').style.display='none',800)};
+
+// result + waveform
+let peaks=null,aud=$('aud');
+async function showResult(j){
+ $('result').style.display='block';$('dlw').href=j.wav;$('dlm').href=j.mp3;$('dlw').download=j.wav.split('/').pop();$('dlm').download=j.mp3.split('/').pop();
+ aud.src=j.wav+'?'+Date.now();
+ const buf=await new (window.AudioContext||webkitAudioContext)().decodeAudioData(await (await fetch(j.wav)).arrayBuffer());
+ const d=buf.getChannelData(0),n=600,step=Math.floor(d.length/n);peaks=[];
+ for(let i=0;i<n;i++){let m=0;for(let k=i*step;k<(i+1)*step;k++)m=Math.max(m,Math.abs(d[k]));peaks.push(m)}
+ drawWave();aud.play().catch(()=>{})}
+function drawWave(){const c=$('wave');if(!c.offsetWidth)return;const w=c.width=c.offsetWidth*2,h=c.height=220,g=c.getContext('2d'),s=getComputedStyle(document.documentElement);
+ g.clearRect(0,0,w,h);if(!peaks)return;const p=aud.duration?aud.currentTime/aud.duration:0,bw=w/peaks.length;
+ peaks.forEach((v,i)=>{g.fillStyle=i/peaks.length<p?s.getPropertyValue('--accent2'):s.getPropertyValue('--accent');const bh=Math.max(3,v*h*.95);g.fillRect(i*bw,(h-bh)/2,bw*.7,bh)});
+ $('time').textContent=`${aud.currentTime.toFixed(1)} / ${(aud.duration||0).toFixed(1)} s`}
+aud.ontimeupdate=aud.onloadedmetadata=aud.onended=drawWave;aud.onplay=aud.onpause=()=>$('play').textContent=aud.paused?'▶ Play':'⏸ Pause';
+$('play').onclick=()=>aud.paused?aud.play():aud.pause();
+$('wave').onclick=e=>{if(aud.duration)aud.currentTime=aud.duration*e.offsetX/e.target.offsetWidth};
+addEventListener('resize',drawWave);applyTheme();render();
+</script>
+</body>
+</html>
